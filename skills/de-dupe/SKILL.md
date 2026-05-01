@@ -16,8 +16,6 @@ Follow a safe, repeatable workflow to find duplicated code, extract shared helpe
 2. Identify duplication targets.
    - Scan for obvious repeats in the touched files.
    - Use `rg` to find similar blocks or repeated strings.
-     - Example: `rg -n "functionName|error message|regex literal" src/`
-     - Example: `rg -n "(\w+\([^)]*\))" src/` then narrow to common blocks.
 
 3. Decide if extraction is warranted.
    - Extract when logic is repeated 2+ times and the abstraction is stable.
@@ -26,30 +24,19 @@ Follow a safe, repeatable workflow to find duplicated code, extract shared helpe
 4. Extract shared utilities.
    - Create a small function with a focused signature.
    - Place in an existing shared module or create a new `utils`/`shared` file.
-   - Keep side effects explicit and minimize hidden dependencies.
 
-5. Replace duplicates.
-   - Update call sites to use the new helper.
-   - Remove redundant code and keep names consistent.
+5. Replace duplicates and remove redundant code.
 
-6. Verify behavior.
-   - Update or add tests when behavior is non-trivial.
-   - Run relevant tests or linters if available.
+6. Verify behavior — run relevant tests or linters if available.
 
 ## Heuristics
 
-- Prefer simple helpers over deep class refactors.
-- Keep params explicit; avoid passing large context objects without need.
 - Extract constants for repeated literals (strings, regexes, numbers).
-- If duplication is across layers, consider moving logic to the lowest shared layer.
+- If duplication is across layers, move logic to the lowest shared layer.
+- Prefer simple helpers over deep class refactors.
 
 ## Guardrails
 
 - Avoid introducing new dependencies for small refactors.
 - Do not change public APIs unless explicitly requested.
-- Preserve performance characteristics; avoid extra allocations in hot paths.
-
-## Notes for Codex
-
-- Use `rg` for fast discovery and validate with context before editing.
 - Keep the diff small and focused; do not mix refactors with unrelated changes.
