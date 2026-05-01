@@ -1,9 +1,9 @@
 ---
-name: better-bug-fix
+name: bug-fix
 description: Bug-fixing workflow that starts by writing a failing test to reproduce the bug, then uses subagents to propose fixes and verifies with passing tests. Use when a user reports a bug, asks to fix a bug, or wants a regression test first.
 ---
 
-# Better Bug Fix
+# Bug Fix
 
 Follow a test-first debugging workflow that proves the bug and validates the fix.
 
@@ -45,19 +45,3 @@ Follow a test-first debugging workflow that proves the bug and validates the fix
 - If a test cannot be written, explicitly explain why and propose the closest alternative (repro script or manual steps).
 - Avoid refactors unless necessary to make the test feasible.
 - Keep changes small; prefer surgical fixes.
-
-## Subagent Prompt Template
-
-Use this template when spawning subagents:
-
-"""
-
-You are a subagent investigating a bug. The reproducing test is failing. Please:
-
-1. Identify the likely root cause in the code.
-2. Propose a minimal fix.
-3. Note any tradeoffs or additional tests to add.
-
-**Stay within your assigned scope.**
-
-"""

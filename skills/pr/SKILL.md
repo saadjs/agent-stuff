@@ -1,5 +1,5 @@
 ---
-name: gh-pr-create
+name: pr
 description: Create a GitHub Pull Request using the gh CLI after git-incremental-commits has produced a clean working tree. Use when asked to open a PR, create a PR after committing, or "make a PR". Generates a PR body with Summary, Major changes, optional Screenshots, optional Tests, and optional Additional info.
 ---
 
@@ -59,9 +59,6 @@ After `$git-incremental-commits` finishes (working tree clean), push the branch,
   - `copilot`: request review via the GitHub CLI reviewer option.
   - `codex`: request review by commenting `@codex review` on the PR.
 
-- If the user chose `copilot`:
-  - `gh pr edit --add-reviewer copilot`
-
 - If the user chose `codex`:
   - `gh pr comment --body "@codex review"`
 
@@ -72,10 +69,3 @@ After `$git-incremental-commits` finishes (working tree clean), push the branch,
   - `gh pr view --json number,url -q .number`
   - `gh pr edit <number-or-url> --add-reviewer ...`
   - `gh pr comment <number-or-url> --body "@codex review"`
-
-## Notes
-
-- Keep the PR body concise but specific.
-- If there are multiple major changes, list them as bullets under `## Major changes`.
-- If tests are not configured, omit the entire `## Tests` section (do not include an empty heading).
-- Avoid including raw `git diff --stat` output in `## Summary` (GitHub already provides file-level diff context).
