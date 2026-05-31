@@ -6,10 +6,14 @@ cwd=$(echo "$input" | jq -r '.workspace.current_dir // .cwd // empty')
 model=$(echo "$input" | jq -r '.model.display_name // empty')
 used=$(echo "$input" | jq -r 'if (.context_window.used_percentage | type) == "number" then .context_window.used_percentage else empty end')
 remaining=$(echo "$input" | jq -r 'if (.context_window.remaining_percentage | type) == "number" then .context_window.remaining_percentage else empty end')
+ctx_total=$(echo "$input" | jq -r '.context_window.context_window_size // empty')
+ctx_input_tokens=$(echo "$input" | jq -r '.context_window.total_input_tokens // empty')
 session_name=$(echo "$input" | jq -r '.session_name // empty')
 output_style=$(echo "$input" | jq -r '.output_style.name // empty')
 rate_5h=$(echo "$input" | jq -r 'if (.rate_limits.five_hour.used_percentage | type) == "number" then .rate_limits.five_hour.used_percentage else empty end')
 rate_7d=$(echo "$input" | jq -r 'if (.rate_limits.seven_day.used_percentage | type) == "number" then .rate_limits.seven_day.used_percentage else empty end')
+effort_level=$(echo "$input" | jq -r '.effort.level // empty')
+thinking_enabled=$(echo "$input" | jq -r '.thinking.enabled // empty')
 
 # ANSI color codes
 RESET='\033[0m'
@@ -51,20 +55,66 @@ fi
 # Context usage — gray
 ctx_info=""
 ctx_color="$GRAY"
-if [ -n "$used" ]; then
-  if [ -n "$remaining" ]; then
-    ctx_info=" ${DIM}[${RESET}${ctx_color}${used}% used${RESET}${DIM} | ${RESET}${ctx_color}${remaining}% left${RESET}${DIM}]${RESET}"
-  else
-    ctx_info=" ${DIM}[${RESET}${ctx_color}${used}% used${RESET}${DIM}]${RESET}"
+if [ -n "$used" ] || [ -n "$remaining" ]; then
+  # Format token counts with k suffix
+  tok_used=""
+  tok_remaining=""
+  if [ -n "$ctx_input_tokens" ] && [ -n "$ctx_total" ]; then
+    tok_used=$(awk "BEGIN {printf \"%.1fk\", $ctx_input_tokens/1000}")
+    tok_rem_raw=$(( ctx_total - ctx_input_tokens ))
+    tok_remaining=$(awk "BEGIN {printf \"%.1fk\", $tok_rem_raw/1000}")
   fi
-elif [ -n "$remaining" ]; then
-  ctx_info=" ${DIM}[${RESET}${ctx_color}${remaining}% left${RESET}${DIM}]${RESET}"
+
+  used_part=""
+  remaining_part=""
+  if [ -n "$used" ]; then
+    if [ -n "$tok_used" ]; then
+      used_part="${ctx_color}${tok_used} (${used}%) used${RESET}"
+    else
+      used_part="${ctx_color}${used}% used${RESET}"
+    fi
+  fi
+  if [ -n "$remaining" ]; then
+    if [ -n "$tok_remaining" ]; then
+      remaining_part="${ctx_color}${tok_remaining} (${remaining}%) left${RESET}"
+    else
+      remaining_part="${ctx_color}${remaining}% left${RESET}"
+    fi
+  fi
+
+  if [ -n "$used_part" ] && [ -n "$remaining_part" ]; then
+    ctx_info=" ${DIM}[${RESET}${used_part}${DIM} | ${RESET}${remaining_part}${DIM}]${RESET}"
+  elif [ -n "$used_part" ]; then
+    ctx_info=" ${DIM}[${RESET}${used_part}${DIM}]${RESET}"
+  elif [ -n "$remaining_part" ]; then
+    ctx_info=" ${DIM}[${RESET}${remaining_part}${DIM}]${RESET}"
+  fi
 fi
 
-# Model info
+# Effort / thinking — folded into the model bracket
+effort_part=""
+if [ -n "$effort_level" ]; then
+  case "$effort_level" in
+    low)    effort_color="$GRAY" ;;
+    medium) effort_color="$YELLOW" ;;
+    high)   effort_color="$ORANGE" ;;
+    xhigh)  effort_color="$RED" ;;
+    max)    effort_color="${BOLD}${RED}" ;;
+    *)      effort_color="$GRAY" ;;
+  esac
+  effort_part="${effort_color}${effort_level}${RESET}"
+elif [ "$thinking_enabled" = "true" ]; then
+  effort_part="${CYAN}thinking${RESET}"
+fi
+
+# Model info — [model | effort]
 model_info=""
 if [ -n "$model" ]; then
-  model_info=" ${DIM}[${RESET}${ORANGE}${model}${RESET}${DIM}]${RESET}"
+  if [ -n "$effort_part" ]; then
+    model_info=" ${DIM}[${RESET}${ORANGE}${model}${RESET}${DIM} | ${RESET}${effort_part}${DIM}]${RESET}"
+  else
+    model_info=" ${DIM}[${RESET}${ORANGE}${model}${RESET}${DIM}]${RESET}"
+  fi
 fi
 
 # Session name (only when set via /rename)
