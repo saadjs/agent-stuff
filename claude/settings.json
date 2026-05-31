@@ -7,15 +7,16 @@
       "Bash(pnpm tsc *)",
       "Bash(pnpm tsc)"
     ],
-    "defaultMode": "default"
+    "defaultMode": "auto"
   },
-  "model": "opus[1m]",
+  "model": "opus",
   "statusLine": {
     "type": "command",
     "command": "zsh $HOME/.claude/statusline-command.sh"
   },
   "enabledPlugins": {
-    "codex@openai-codex": true
+    "codex@openai-codex": true,
+    "frontend-design@claude-plugins-official": true
   },
   "extraKnownMarketplaces": {
     "anthropic-agent-skills": {
@@ -32,6 +33,10 @@
     }
   },
   "effortLevel": "high",
+  "advisorModel": "opus",
+  "tui": "default",
   "skipDangerousModePermissionPrompt": true,
-  "agentPushNotifEnabled": true
+  "inputNeededNotifEnabled": true,
+  "agentPushNotifEnabled": true,
+  "skipAutoPermissionPrompt": true
 }
