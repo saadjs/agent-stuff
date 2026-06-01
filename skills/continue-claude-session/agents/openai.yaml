@@ -1,0 +1,7 @@
+interface:
+  display_name: "Continue Claude Session"
+  short_description: "Resume work from a Claude Code session"
+  default_prompt: "Use $continue-claude-session to resume the latest Claude Code session for this project."
+
+policy:
+  allow_implicit_invocation: false
