@@ -12,7 +12,7 @@ description: Continue work from a local Claude Code session transcript. Use when
 
 ## Locate Transcript
 
-1. Look under `~/.claude/projects/-Users-saad-<project-name>`.
+1. Look under `~/.claude/projects/-Users-saad-<path-to-project>`.
 2. If a session id or title is provided, find the matching transcript.
 3. Otherwise, find the most recent transcript for the inferred project.
 4. Read the full transcript before editing files, running tests, or continuing implementation.
