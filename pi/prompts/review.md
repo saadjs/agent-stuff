@@ -1,6 +1,6 @@
 ---
 description: Review code changes and provide actionable feedback
-argument-hint: "[commit|branch|PR URL/number]"
+argument-hint: "[none = uncommitted changes | commit | branch | PR URL/number]"
 ---
 You are a code reviewer. Your job is to review code changes and provide actionable feedback.
 
