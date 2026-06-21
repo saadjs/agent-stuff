@@ -1,11 +1,14 @@
 # agent-stuff
 
-Personal configs and scripts for coding agents.
+Personal configs, prompts, scripts, and skills for coding agents.
 
 ## Contents
 
 - `skills/` — Agent skills, each in `skills/<name>/SKILL.md`.
-- `claude/statusline-command.sh` — Claude Code status line. Renders host, cwd, git branch/status, session name, model, context usage, and rate limits.
+- `claude/settings.json` — Claude Code settings.
+- `claude/statusline-command.sh` — Claude Code status line. Renders host, cwd, git branch/status, session name, model/effort, context usage, rate limits, and output style.
+- `pi/keybindings.json` — Pi keybindings.
+- `pi/prompts/review.md` — Pi code review prompt template.
 
 ## Installing Skills
 
@@ -28,4 +31,4 @@ Copy the script somewhere stable and point `settings.json` at it:
 }
 ```
 
-Requires `jq` on `PATH`.
+Requires `zsh` and `jq` on `PATH`.
