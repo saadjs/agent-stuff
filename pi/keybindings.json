@@ -21,8 +21,8 @@
   "app.session.toggleNamedFilter": [
     "ctrl+shift+n"
   ],
-  "app.model.cycleForward": [],
-  "app.model.cycleBackward": [],
+  "app.model.cycleForward": "alt+p",
+  "app.model.cycleBackward": "shift+alt+p",
   "app.models.toggleProvider": [
     "ctrl+shift+t"
   ]
