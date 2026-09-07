@@ -13,7 +13,11 @@ output_style=$(echo "$input" | jq -r '.output_style.name // empty')
 rate_5h=$(echo "$input" | jq -r 'if (.rate_limits.five_hour.used_percentage | type) == "number" then .rate_limits.five_hour.used_percentage else empty end')
 rate_7d=$(echo "$input" | jq -r 'if (.rate_limits.seven_day.used_percentage | type) == "number" then .rate_limits.seven_day.used_percentage else empty end')
 effort_level=$(echo "$input" | jq -r '.effort.level // empty')
-thinking_enabled=$(echo "$input" | jq -r '.thinking.enabled // empty')
+thinking_enabled=$(echo "$input" | jq -r 'if .thinking.enabled == true then "true" else empty end')
+cache_observed=$(echo "$input" | jq -r 'if .prompt_cache.caching_observed == true then "true" else empty end')
+cache_warm=$(echo "$input" | jq -r 'if .prompt_cache.warm == true then "true" else empty end')
+cache_hit_ratio=$(echo "$input" | jq -r 'if (.prompt_cache.hit_ratio | type) == "number" then .prompt_cache.hit_ratio else empty end')
+cache_miss_cause=$(echo "$input" | jq -r '.prompt_cache.last_miss_cause.causes[0] // empty')
 
 # ANSI color codes
 RESET='\033[0m'
@@ -23,13 +27,9 @@ YELLOW='\033[33m'
 GREEN='\033[32m'
 RED='\033[31m'
 MAGENTA='\033[35m'
-BLUE='\033[34m'
 ORANGE='\033[38;5;208m'
 GRAY='\033[90m'
 DIM='\033[2m'
-
-# Hostname
-host=$(hostname -s)
 
 # Current dir basename
 if [ -n "$cwd" ]; then
@@ -48,7 +48,7 @@ if git -C "${cwd:-$(pwd)}" rev-parse --git-dir > /dev/null 2>&1; then
     else
       git_status_icon="${GREEN} ✔${RESET}"
     fi
-    git_info="${DIM}:${RESET} ${MAGENTA}${git_branch}${RESET}${git_status_icon} ${DIM}:${RESET}"
+    git_info=" ${DIM}:${RESET} ${MAGENTA}${git_branch}${RESET}${git_status_icon} ${DIM}:${RESET}"
   fi
 fi
 
@@ -117,16 +117,16 @@ if [ -n "$model" ]; then
   fi
 fi
 
-# Session name (only when set via /rename)
-session_info=""
-if [ -n "$session_name" ]; then
-  session_info=" ${DIM}[${RESET}${YELLOW}${session_name}${RESET}${DIM}]${RESET}"
-fi
-
 # Output style (only when non-default)
 style_info=""
 if [ -n "$output_style" ] && [ "$output_style" != "default" ]; then
   style_info=" ${DIM}[style: ${output_style}]${RESET}"
+fi
+
+# Session name (only when set via /rename)
+session_info=""
+if [ -n "$session_name" ]; then
+  session_info=" ${DIM}[${RESET}${YELLOW}${session_name}${RESET}${DIM}]${RESET}"
 fi
 
 # Rate limits (subscription usage — only shown when available)
@@ -162,4 +162,24 @@ if [ -n "$rate_parts" ]; then
   rate_info=" ${DIM}[${RESET}${rate_parts}${DIM}]${RESET}"
 fi
 
-printf '%b' "${BOLD}${CYAN}${host}${RESET}  ${YELLOW}${dir}${RESET} ${git_info}${session_info}${model_info}${ctx_info}${rate_info}${style_info}"
+# Prompt cache health — warm/cold, hit ratio, likely miss cause
+cache_info=""
+if [ "$cache_observed" = "true" ]; then
+  if [ "$cache_warm" = "true" ]; then
+    cache_state="${GREEN}warm${RESET}"
+  else
+    if [ -n "$cache_miss_cause" ]; then
+      cache_state="${RED}cold:${cache_miss_cause}${RESET}"
+    else
+      cache_state="${RED}cold${RESET}"
+    fi
+  fi
+  if [ -n "$cache_hit_ratio" ]; then
+    hit_pct=$(awk "BEGIN {printf \"%.0f\", $cache_hit_ratio*100}")
+    cache_info=" ${DIM}[${RESET}cache:${cache_state}${DIM} ${RESET}${GRAY}${hit_pct}%${RESET}${DIM}]${RESET}"
+  else
+    cache_info=" ${DIM}[${RESET}cache:${cache_state}${DIM}]${RESET}"
+  fi
+fi
+
+printf '%b' "${BOLD}${YELLOW}${dir}${RESET}${git_info}${model_info}${ctx_info}${cache_info}${rate_info}${style_info}${session_info}"
