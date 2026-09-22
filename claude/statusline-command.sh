@@ -18,6 +18,14 @@ cache_observed=$(echo "$input" | jq -r 'if .prompt_cache.caching_observed == tru
 cache_warm=$(echo "$input" | jq -r 'if .prompt_cache.warm == true then "true" else empty end')
 cache_hit_ratio=$(echo "$input" | jq -r 'if (.prompt_cache.hit_ratio | type) == "number" then .prompt_cache.hit_ratio else empty end')
 cache_miss_cause=$(echo "$input" | jq -r '.prompt_cache.last_miss_cause.causes[0] // empty')
+worktree_name=$(echo "$input" | jq -r '.worktree.name // empty')
+worktree_branch=$(echo "$input" | jq -r '.worktree.branch // empty')
+pr_number=$(echo "$input" | jq -r '.pr.number // empty')
+pr_kind=$(echo "$input" | jq -r '.pr.kind // empty')
+pr_review_state=$(echo "$input" | jq -r '.pr.review_state // empty')
+repo_owner=$(echo "$input" | jq -r '.workspace.repo.owner // empty')
+repo_name=$(echo "$input" | jq -r '.workspace.repo.name // empty')
+added_dirs=$(echo "$input" | jq -r '(.workspace.added_dirs // []) | map(split("/") | last) | join(", ")')
 
 # ANSI color codes
 RESET='\033[0m'
@@ -38,7 +46,7 @@ else
   dir=$(basename "$(pwd)")
 fi
 
-# Git info (skip optional locks)
+# Git info (skip optional locks) — shown on line 2
 git_info=""
 if git -C "${cwd:-$(pwd)}" rev-parse --git-dir > /dev/null 2>&1; then
   git_branch=$(git -C "${cwd:-$(pwd)}" symbolic-ref --short HEAD 2>/dev/null || git -C "${cwd:-$(pwd)}" rev-parse --short HEAD 2>/dev/null)
@@ -48,7 +56,7 @@ if git -C "${cwd:-$(pwd)}" rev-parse --git-dir > /dev/null 2>&1; then
     else
       git_status_icon="${GREEN} ✔${RESET}"
     fi
-    git_info=" ${DIM}:${RESET} ${MAGENTA}${git_branch}${RESET}${git_status_icon} ${DIM}:${RESET}"
+    git_info="${MAGENTA}${git_branch}${RESET}${git_status_icon}"
   fi
 fi
 
@@ -182,4 +190,66 @@ if [ "$cache_observed" = "true" ]; then
   fi
 fi
 
-printf '%b' "${BOLD}${YELLOW}${dir}${RESET}${git_info}${model_info}${ctx_info}${cache_info}${rate_info}${style_info}${session_info}"
+# Worktree (name/branch, only when present)
+worktree_info=""
+if [ -n "$worktree_name" ]; then
+  if [ -n "$worktree_branch" ]; then
+    worktree_info="${CYAN}worktree:${worktree_name}${RESET}${DIM}@${RESET}${worktree_branch}"
+  else
+    worktree_info="${CYAN}worktree:${worktree_name}${RESET}"
+  fi
+fi
+
+# PR / MR state (only when present)
+pr_info=""
+if [ -n "$pr_number" ]; then
+  if [ "$pr_kind" = "mr" ]; then
+    pr_label="!${pr_number}"
+  else
+    pr_label="#${pr_number}"
+  fi
+  if [ -n "$pr_review_state" ]; then
+    case "$pr_review_state" in
+      approved)          pr_color="$GREEN" ;;
+      changes_requested)  pr_color="$RED" ;;
+      draft)              pr_color="$GRAY" ;;
+      pending)             pr_color="$YELLOW" ;;
+      *)                  pr_color="$GRAY" ;;
+    esac
+    pr_info="${pr_color}${pr_label} ${pr_review_state}${RESET}"
+  else
+    pr_info="${GRAY}${pr_label}${RESET}"
+  fi
+fi
+
+# Repo owner/name (only when present)
+repo_info=""
+if [ -n "$repo_owner" ] && [ -n "$repo_name" ]; then
+  repo_info="${GRAY}${repo_owner}/${repo_name}${RESET}"
+fi
+
+# Added dirs (only when non-empty)
+added_dirs_info=""
+if [ -n "$added_dirs" ]; then
+  added_dirs_info="${DIM}+dirs:${RESET} ${added_dirs}"
+fi
+
+# Assemble line 2 from non-empty parts, joined by a dim separator
+line2=""
+for part in "$git_info" "$worktree_info" "$pr_info" "$repo_info" "$added_dirs_info"; do
+  if [ -n "$part" ]; then
+    if [ -n "$line2" ]; then
+      line2="${line2}${DIM} | ${RESET}${part}"
+    else
+      line2="${part}"
+    fi
+  fi
+done
+
+line1="${BOLD}${YELLOW}${dir}${RESET}${model_info}${ctx_info}${cache_info}${rate_info}${style_info}${session_info}"
+
+if [ -n "$line2" ]; then
+  printf '%b\n%b' "$line1" "$line2"
+else
+  printf '%b' "$line1"
+fi
