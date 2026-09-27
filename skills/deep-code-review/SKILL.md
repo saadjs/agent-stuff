@@ -1,6 +1,7 @@
 ---
 name: deep-code-review
 description: Review uncommitted changes, commits, branches, or pull requests for bugs, behavior changes, project conventions, and maintainability.
+disable-model-invocation: true
 ---
 
 # Code Review
