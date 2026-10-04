@@ -31,3 +31,5 @@ Copy the script somewhere stable and point `settings.json` at it:
 ```
 
 Requires `zsh` and `jq` on `PATH`.
+
+Each render also saves its input to `$TMPDIR/claude-statusline/<session_id>.json`. The `remote-status` skill re-renders that snapshot as plain text, so `/remote-status` shows the same info in Remote Control sessions and the Claude mobile app. It expects the script at `~/.claude/statusline-command.sh` (override with `STATUSLINE_SCRIPT`).

@@ -5,7 +5,8 @@ input=$(cat)
 eval "$(echo "$input" | jq -r '
   def num: if type == "number" then . else "" end;
   def flag: if . == true then "true" else "" end;
-  @sh "cwd=\(.workspace.current_dir // .cwd // "")
+  @sh "session_id=\(.session_id // "")
+cwd=\(.workspace.current_dir // .cwd // "")
 model=\(.model.display_name // "")
 used=\(.context_window.used_percentage | num)
 remaining=\(.context_window.remaining_percentage | num)
@@ -38,6 +39,13 @@ claude_lines_added=\(.cost.total_lines_added // 0)
 claude_lines_removed=\(.cost.total_lines_removed // 0)"
 ')"
 
+# Snapshot input so the remote-status skill can re-render it from a remote session
+if [ -n "$session_id" ] && [ -z "$STATUSLINE_PLAIN" ]; then
+  snapshot_dir="${TMPDIR:-/tmp}/claude-statusline"
+  mkdir -p "$snapshot_dir"
+  printf '%s' "$input" > "$snapshot_dir/$session_id.json.tmp" && mv "$snapshot_dir/$session_id.json.tmp" "$snapshot_dir/$session_id.json"
+fi
+
 # Seconds to a compact duration: 42m, 1h20m, 2d14h
 fmt_duration() {
   local s=$1
@@ -50,17 +58,21 @@ fmt_duration() {
   fi
 }
 
-# ANSI color codes
-RESET='\033[0m'
-BOLD='\033[1m'
-CYAN='\033[36m'
-YELLOW='\033[33m'
-GREEN='\033[32m'
-RED='\033[31m'
-MAGENTA='\033[35m'
-ORANGE='\033[38;5;208m'
-GRAY='\033[90m'
-DIM='\033[2m'
+# ANSI color codes (blank in plain mode)
+if [ -n "$STATUSLINE_PLAIN" ]; then
+  RESET='' BOLD='' CYAN='' YELLOW='' GREEN='' RED='' MAGENTA='' ORANGE='' GRAY='' DIM=''
+else
+  RESET='\033[0m'
+  BOLD='\033[1m'
+  CYAN='\033[36m'
+  YELLOW='\033[33m'
+  GREEN='\033[32m'
+  RED='\033[31m'
+  MAGENTA='\033[35m'
+  ORANGE='\033[38;5;208m'
+  GRAY='\033[90m'
+  DIM='\033[2m'
+fi
 
 # Current dir basename
 if [ -n "$cwd" ]; then
